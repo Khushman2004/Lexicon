@@ -1,6 +1,6 @@
 /* =========================================================
    LEXICON DATABASE
-   Initial Authentication Schema
+   Authentication Schema
    ========================================================= */
 
 IF DB_ID('Lexicon') IS NULL
@@ -15,7 +15,7 @@ GO
 
 /* =========================================================
    USERS
-   Stores account + basic profile information.
+   Stores the minimum information required for authentication.
    ========================================================= */
 
 IF OBJECT_ID('dbo.Users', 'U') IS NULL
@@ -33,23 +33,13 @@ BEGIN
 
         PasswordHash NVARCHAR(500) NOT NULL,
 
-        FirstName NVARCHAR(100) NOT NULL,
-
-        LastName NVARCHAR(100) NULL,
-
-        DateOfBirth DATE NULL,
-
-        Gender NVARCHAR(50) NULL,
-
         IsActive BIT NOT NULL
             CONSTRAINT DF_Users_IsActive
             DEFAULT 1,
 
         CreatedAtUtc DATETIME2 NOT NULL
             CONSTRAINT DF_Users_CreatedAtUtc
-            DEFAULT SYSUTCDATETIME(),
-
-        UpdatedAtUtc DATETIME2 NULL
+            DEFAULT SYSUTCDATETIME()
     );
 END
 GO
@@ -89,8 +79,7 @@ GO
 
 /* =========================================================
    AUTH SESSIONS
-   Stores server-side authentication/session state.
-   We store a HASH of the refresh token, not the raw token.
+   Stores server-side authentication state.
    ========================================================= */
 
 IF OBJECT_ID('dbo.AuthSessions', 'U') IS NULL
@@ -103,8 +92,6 @@ BEGIN
             DEFAULT NEWID(),
 
         UserId UNIQUEIDENTIFIER NOT NULL,
-
-        RefreshTokenHash NVARCHAR(500) NOT NULL,
 
         CreatedAtUtc DATETIME2 NOT NULL
             CONSTRAINT DF_AuthSessions_CreatedAtUtc
@@ -138,19 +125,5 @@ IF NOT EXISTS
 BEGIN
     CREATE INDEX IX_AuthSessions_UserId
         ON dbo.AuthSessions(UserId);
-END
-GO
-
-
-IF NOT EXISTS
-(
-    SELECT 1
-    FROM sys.indexes
-    WHERE name = 'UX_AuthSessions_RefreshTokenHash'
-      AND object_id = OBJECT_ID('dbo.AuthSessions')
-)
-BEGIN
-    CREATE UNIQUE INDEX UX_AuthSessions_RefreshTokenHash
-        ON dbo.AuthSessions(RefreshTokenHash);
 END
 GO
